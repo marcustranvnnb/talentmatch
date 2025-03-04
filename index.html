@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume-Job Matcher | AI-Powered Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: flex;
+        }
+        .results {
+            display: none;
+        }
+        .results.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center justify-between">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-file-alt text-blue-600 mr-2"></i>
+                    Resume-Job Matcher
+                </h1>
+                <p class="text-gray-600">AI-Powered Analysis</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Input Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <form id="analysis-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Resume Input -->
+                    <div>
+                        <label for="resume" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-file-alt text-blue-600 mr-1"></i>
+                            Resume Content
+                        </label>
+                        <div class="space-y-4">
+                            <div 
+                                id="dropzone"
+                                class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all duration-300 hover:border-blue-500 group min-h-[150px] flex items-center justify-center"
+                            >
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="text-center text-gray-400">
+                                        <i class="fas fa-file-upload text-4xl mb-3"></i>
+                                        <p class="text-sm">Drag & drop your resume file here</p>
+                                    </div>
+                                </div>
+                                <div 
+                                    id="dropzone-overlay" 
+                                    class="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-90 pointer-events-none opacity-0 transition-opacity duration-300 z-20"
+                                >
+                                    <div class="text-center">
+                                        <i class="fas fa-file-upload text-4xl text-blue-500 mb-2"></i>
+                                        <p class="text-sm text-blue-600">Drop your resume file here</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- File Display -->
+                            <div id="fileDisplay" class="hidden p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                        <span id="fileName" class="text-sm text-gray-600"></span>
+                                    </div>
+                                    <button type="button" id="removeFile" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea
+                                id="resume"
+                                name="resume"
+                                class="hidden w-full"
+                            ></textarea>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Supported file types: .txt, .doc, .docx, .pdf
+                        </p>
+                    </div>
+
+                    <!-- Job Description Input -->
+                    <div>
+                        <label for="jobUrl" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-briefcase text-blue-600 mr-1"></i>
+                            Job Description URL
+                        </label>
+                        <div class="space-y-4">
+                            <div class="flex space-x-2">
+                                <input
+                                    type="url"
+                                    id="jobUrl"
+                                    name="jobUrl"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                    placeholder="Paste the job posting URL here..."
+                                />
+                                <button
+                                    type="button"
+                                    id="fetchJobBtn"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    <i class="fas fa-download mr-2"></i>
+                                    Fetch
+                                </button>
+                            </div>
+
+                            <!-- Job Description Display -->
+                            <div id="jobDisplay" class="hidden">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-briefcase text-blue-500 mr-2"></i>
+                                            <span id="jobTitle" class="text-sm font-medium text-gray-700"></span>
+                                        </div>
+                                        <button type="button" id="removeJob" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <p id="jobCompany" class="text-sm text-gray-600"></p>
+                                </div>
+                                <textarea
+                                    id="jobDescription"
+                                    name="jobDescription"
+                                    class="hidden"
+                                ></textarea>
+                            </div>
+
+                            <!-- Loading Overlay -->
+                            <div id="jobLoadingOverlay" class="hidden p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                    <span class="text-sm text-gray-600">Fetching job details...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Provider Selection -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-robot text-blue-600 mr-1"></i>
+                            Select AI Provider
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="relative">
+                                <input type="radio" id="openai" name="aiProvider" value="openai" class="peer hidden" checked>
+                                <label for="openai" class="block p-4 border rounded-lg cursor-pointer hover:border-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" alt="OpenAI" class="w-6 h-6 mr-2">
+                                            <span class="font-medium">OpenAI</span>
+                                        </div>
+                                        <i class="fas fa-check text-blue-500 opacity-0 peer-checked:opacity-100"></i>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" id="gemini" name="aiProvider" value="gemini" class="peer hidden">
+                                <label for="gemini" class="block p-4 border rounded-lg cursor-pointer hover:border-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <img src="https://www.gstatic.com/lamda/images/favicon_v1_150160cddff7f294ce30.svg" alt="Gemini" class="w-6 h-6 mr-2">
+                                            <span class="font-medium">Gemini</span>
+                                        </div>
+                                        <i class="fas fa-check text-blue-500 opacity-0 peer-checked:opacity-100"></i>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" id="deepseek" name="aiProvider" value="deepseek" class="peer hidden">
+                                <label for="deepseek" class="block p-4 border rounded-lg cursor-pointer hover:border-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <img src="https://www.deepseek.com/favicon.ico" alt="DeepSeek" class="w-6 h-6 mr-2">
+                                            <span class="font-medium">DeepSeek</span>
+                                        </div>
+                                        <i class="fas fa-check text-blue-500 opacity-0 peer-checked:opacity-100"></i>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Key Input -->
+                    <div>
+                        <label for="apiKey" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-key text-blue-600 mr-1"></i>
+                            API Key
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <input
+                                type="password"
+                                id="apiKey"
+                                name="apiKey"
+                                class="block w-full rounded-md border-gray-300 pr-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                placeholder="Enter your API key"
+                            />
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <button
+                                    type="button"
+                                    id="toggleApiKey"
+                                    class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-1 space-y-2 text-sm text-gray-500">
+                            <p>Your API key is processed client-side and never stored.</p>
+                            <div id="apiKeyInfo">
+                                <!-- OpenAI Instructions -->
+                                <div class="hidden" data-provider="openai">
+                                    <p class="font-medium text-gray-700">To get started with OpenAI:</p>
+                                    <ol class="list-decimal ml-4 space-y-1">
+                                        <li>Go to the <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 hover:text-blue-800">OpenAI Platform</a></li>
+                                        <li>Sign in or create an account</li>
+                                        <li>Click "Create new secret key"</li>
+                                        <li>Copy the key (starts with 'sk-')</li>
+                                        <li>We use GPT-3.5 Turbo for optimal performance</li>
+                                    </ol>
+                                    <p class="mt-2 text-xs">💡 Tip: OpenAI offers $5 in free credits for new accounts</p>
+                                </div>
+                                
+                                <!-- Gemini Instructions -->
+                                <div class="hidden" data-provider="gemini">
+                                    <p class="font-medium text-gray-700">To get started with Gemini:</p>
+                                    <ol class="list-decimal ml-4 space-y-1">
+                                        <li>Go to <a href="https://makersuite.google.com/app/apikey" target="_blank" class="text-blue-600 hover:text-blue-800">Google AI Studio</a></li>
+                                        <li>Sign in with your Google account</li>
+                                        <li>Click "Get API key" in the top right</li>
+                                        <li>Select "Create API key in new project"</li>
+                                        <li>Enable the Gemini API if prompted</li>
+                                        <li>Copy the key (starts with 'AIza')</li>
+                                    </ol>
+                                    <p class="mt-2 text-xs">💡 Tips:</p>
+                                    <ul class="list-disc ml-4 text-xs space-y-1">
+                                        <li>Free tier includes 60 requests/minute</li>
+                                        <li>We use the latest Gemini Pro model</li>
+                                        <li>No credit card required</li>
+                                    </ul>
+                                </div>
+                                
+                                <!-- DeepSeek Instructions -->
+                                <div class="hidden" data-provider="deepseek">
+                                    <p class="font-medium text-gray-700">To get started with DeepSeek:</p>
+                                    <ol class="list-decimal ml-4 space-y-1">
+                                        <li>Go to <a href="https://platform.deepseek.com/settings/api" target="_blank" class="text-blue-600 hover:text-blue-800">DeepSeek Platform</a></li>
+                                        <li>Sign in or create an account</li>
+                                        <li>Navigate to API Settings</li>
+                                        <li>Generate and copy your API key</li>
+                                        <li>We use their latest chat model for best results</li>
+                                    </ol>
+                                    <p class="mt-2 text-xs">💡 Tip: DeepSeek offers competitive pricing for their API</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="space-y-6">
+                        <div class="flex justify-center">
+                            <button
+                                type="submit"
+                                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <i class="fas fa-magic mr-2"></i>
+                                Analyze Match
+                            </button>
+                        </div>
+
+                        <!-- Sample Analysis -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">
+                                <i class="fas fa-lightbulb text-blue-600 mr-2"></i>
+                                Sample Analysis
+                            </h3>
+                            <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-700">Match Score: <span class="text-green-600">85%</span></h4>
+                                    <p class="text-sm text-gray-500">High alignment between skills and requirements</p>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="font-medium text-gray-700">Key Recommendations:</h4>
+                                    <ul class="mt-2 text-sm text-gray-600 space-y-1 list-disc pl-5">
+                                        <li>Highlight experience with agile methodologies</li>
+                                        <li>Emphasize leadership in cross-functional teams</li>
+                                        <li>Add metrics to quantify project impacts</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium text-gray-700">Strengths Analysis:</h4>
+                                    <ul class="mt-2 text-sm text-gray-600 space-y-1 list-disc pl-5">
+                                        <li>Strong technical background in required technologies</li>
+                                        <li>Proven track record in similar role</li>
+                                        <li>Relevant industry certifications</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium text-gray-700">Areas to Address:</h4>
+                                    <ul class="mt-2 text-sm text-gray-600 space-y-1 list-disc pl-5">
+                                        <li>Consider adding recent cloud platform experience</li>
+                                        <li>Clarify experience with specific tools mentioned</li>
+                                    </ul>
+                                </div>
+
+                                <p class="text-xs text-gray-500 mt-4">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    This is a sample analysis. Your actual results will be personalized based on your resume and the job description.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading items-center justify-center p-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="ml-4 text-gray-600">Analyzing your match...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results space-y-6">
+            <!-- Match Score -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-percentage text-blue-600 mr-2"></i>
+                    Match Score
+                </h2>
+                <div id="matchScore" class="text-center">
+                    <!-- Score will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-lightbulb text-blue-600 mr-2"></i>
+                    Recommendations
+                </h2>
+                <div id="recommendations" class="prose max-w-none">
+                    <!-- Recommendations will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Talent Analysis -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-blue-600 mr-2"></i>
+                    Talent Analysis
+                </h2>
+                <div id="talentAnalysis" class="prose max-w-none">
+                    <!-- Talent analysis will be inserted here -->
+                </div>
+            </div>
+
+            <!-- HR Concerns -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-exclamation-circle text-blue-600 mr-2"></i>
+                    HR Considerations
+                </h2>
+                <div id="hrConcerns" class="prose max-w-none">
+                    <!-- HR concerns will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-50 border-l-4 border-red-400 p-4 mb-8">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700">
+                        <!-- Error message will be inserted here -->
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="assets/script.js"></script>
+</body>
+</html>
